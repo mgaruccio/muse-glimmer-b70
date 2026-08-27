@@ -9,7 +9,7 @@ keeps the fast path unchanged and adds, for packed-QKV drafts:
   * base fallback (always): run each already-configured QKV module on
     normalized context states, discard Q, stack K/V, then follow the original
     normalization/RoPE/cache-store path.
-  * timing (DFLASH_KV_MODE=timing, default): wrap
+  * timing (DFLASH_KV_MODE=timing): wrap
     precompute_and_store_context_kv / _project_context_kv with device-synced
     perf_counter instrumentation (they run eagerly every step, outside CUDA
     graphs), logging num_ctx distribution and phase budgets every 100 calls.
@@ -20,17 +20,17 @@ keeps the fast path unchanged and adds, for packed-QKV drafts:
     the per-layer fallback at first use.
 
 Usage inside the vLLM container:
-  DFLASH_KV_MODE=timing python /patch-vllm-dflash-gptq-context-kv.py \
+  DFLASH_KV_MODE=none python /patch-vllm-dflash-gptq-context-kv.py \
       /opt/venv/lib/python3.12/site-packages/vllm/model_executor/models/qwen3_dflash.py
 
-Modes: none (base only, v1 behavior) | timing | kvonly | kvonly+timing
+Modes: none (default, base only) | timing | kvonly | kvonly+timing
 """
 
 import os
 from pathlib import Path
 import sys
 
-MODE = os.environ.get("DFLASH_KV_MODE", "timing").strip().lower()
+MODE = os.environ.get("DFLASH_KV_MODE", "none").strip().lower()
 if MODE not in ("none", "timing", "kvonly", "kvonly+timing"):
     raise SystemExit(f"unknown DFLASH_KV_MODE={MODE!r} (none|timing|kvonly|kvonly+timing)")
 

@@ -77,7 +77,7 @@ bash scripts/start-muse-vllm-dflash-c1-graph-draft-gptq.sh
 bash scripts/wait-vllm-health.sh 420 8000
 curl -sf http://127.0.0.1:8000/v1/models
 ```
-Expect served id `muse-glimmer-gptq`. Logs: `XPUwNa16LinearKernel`, `num_spec_tokens=20`, patch `mode=base`.
+Expect served id `muse-glimmer-gptq`. Logs: `XPUwNa16LinearKernel`, `num_spec_tokens=20`, patch `mode=base`. The launcher binds `0.0.0.0:8000` and `docker rm -f`s that container name. Override `PORT`, `NAME`, and `RENDER_NODE` if `/dev/dri/renderD128` is not your GPU.
 3. **Measure**
 ```bash
 python3 scripts/vllm-dflash-share-suite.py 3 2048 share-suite.json
