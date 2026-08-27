@@ -1,0 +1,6 @@
+{
+  "method": "dflash",
+  "model": "/draft",
+  "num_speculative_tokens": 20,
+  "quantization": "gptq"
+}
