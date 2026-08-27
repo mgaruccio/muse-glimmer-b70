@@ -59,33 +59,30 @@ The 89 / 101 numbers are not “we found a 90 tok/s sky prompt.” They are what
 
 ---
 
-## Replicate the config
-
-You need one Arc Pro B70 (32 GB), Docker, and the GPTQ trees. Upstream BF16 is [meta-models/Muse-Glimmer-30B](https://huggingface.co/meta-models/Muse-Glimmer-30B). Our GPTQ artifacts are local (GPTQModel 7.3.2, 4-bit G128, `desc_act=false`). The draft requantizer is `scripts/quantize-muse-dflash-assistant-gptq.py`. Do not overwrite the BF16 assistant.
-
-Pin this image:
-
-`vllm/vllm-openai-xpu@sha256:f01e24f6c7ff01f1e0662234255a1372297d1dbd89d003cf13c8fad3eab1ba4f`
-
-Install `vllm-xpu-kernels==0.1.13.2` in the container (0.1.12.3 is missing Muse GQA decode shapes). Apply `scripts/patch-vllm-dflash-gptq-context-kv.py` with `DFLASH_KV_MODE=none`. Spec file (`scripts/muse-dflash-spec-gptq.json`):
-
-```json
-{"method":"dflash","model":"/draft","num_speculative_tokens":20,"quantization":"gptq"}
+## Reproduce
+You need one Arc Pro B70 (32 GB), Linux `xe`, Docker, and `/dev/dri`. This is not CUDA.
+GPTQ trees (4-bit, G128, symmetric, `desc_act=false`, GPTQModel 7.3.2), Apache 2.0, derived from [meta-models/Muse-Glimmer-30B](https://huggingface.co/meta-models/Muse-Glimmer-30B):
+1. **Download weights**
+```bash
+hf download mgaruccio/Muse-Glimmer-30B-GPTQ-Int4-sym-G128 --local-dir ./models/target
+hf download mgaruccio/Muse-Glimmer-30B-assistant-GPTQ-Int4-sym-G128 --local-dir ./models/draft
+# then compare shard hashes to docs/checksums.md
 ```
-
-Serve the GPTQ target with the GPTQ draft, graphs on, one sequence:
-
-- `--quantization gptq --dtype float16 --kv-cache-dtype fp8`
-- `--max-model-len 8192 --max-num-seqs 1 --max-num-batched-tokens 2048`
-- `--no-enable-prefix-caching --language-model-only --reasoning-parser muse_glimmer`
-- `VLLM_XPU_ENABLE_XPU_GRAPH=1` (no `--enforce-eager`)
-
-Launcher: `scripts/start-muse-vllm-dflash-c1-graph-draft-gptq.sh` (`MODEL`, `DRAFT`, `SPEC`, `PATCH` are overridable). Health: `scripts/wait-vllm-health.sh`. Measure:
-
+2. **Launch** (pinned image, kernels 0.1.13.2, graphs, n=20, overlay `DFLASH_KV_MODE=none`):
+```bash
+export MODEL="$PWD/models/target"
+export DRAFT="$PWD/models/draft"
+export DFLASH_KV_MODE=none
+bash scripts/start-muse-vllm-dflash-c1-graph-draft-gptq.sh
+bash scripts/wait-vllm-health.sh 420 8000
+curl -sf http://127.0.0.1:8000/v1/models
+```
+Expect served id `muse-glimmer-gptq`. Logs: `XPUwNa16LinearKernel`, `num_spec_tokens=20`, patch `mode=base`.
+3. **Measure**
 ```bash
 python3 scripts/vllm-dflash-share-suite.py 3 2048 share-suite.json
 ```
-
-If any prompt fails to stop, emit content, or pass its check, the script refuses a headline. Clients that only read `delta.content` will look idle until thinking finishes — Muse streams `delta.reasoning` first.
-
+The process exits non-zero if any prompt is not quoteable. Do not publish a headline from a partial run. Details: [`docs/share-suite.md`](docs/share-suite.md).
+Muse streams `delta.reasoning` then `delta.content`. A client that only reads `content` looks idle until thinking finishes.
+Rebuild from BF16 (optional, **not** bit-identical to the Hub trees; needs CUDA + GPTQModel 7.3.2): `scripts/quantize-muse-glimmer-gptq.py` and `scripts/quantize-muse-dflash-assistant-gptq.py`.
 One stream. Not Spec-Bench, not a 5090, not eight concurrent llama.cpp slots. One B70, the published recipes as a floor, and a vLLM DFlash stack that actually writes the answer.

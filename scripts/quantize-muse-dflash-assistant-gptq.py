@@ -11,8 +11,10 @@ real-hidden-state calibration pass can replace this artifact, but must never
 overwrite the BF16 source or this output path.
 """
 
+import argparse
 import gc
 import json
+import os
 import shutil
 import time
 from pathlib import Path
@@ -25,8 +27,8 @@ from gptqmodel.utils.backend import BACKEND
 from safetensors import safe_open
 from transformers import AutoConfig, AutoModel
 
-SOURCE = Path("/home/mike/inference-models/Muse-Glimmer-30B-assistant-BF16-source")
-FINAL = Path("/home/mike/inference-models/Muse-Glimmer-30B-assistant-GPTQ-Int4-sym-G128")
+SOURCE = Path(os.environ.get("MUSE_ASSISTANT_BF16", "models/Muse-Glimmer-30B-assistant"))
+FINAL = Path(os.environ.get("MUSE_ASSISTANT_GPTQ", "models/Muse-Glimmer-30B-assistant-GPTQ-Int4-sym-G128"))
 PARTIAL = FINAL.with_name(FINAL.name + ".partial")
 OFFLOAD = Path("/tmp/muse-dflash-assistant-gptq-offload")
 
