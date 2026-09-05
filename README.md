@@ -1,4 +1,14 @@
-# Muse Glimmer at 90 tok/s on one Arc Pro B70
+# Muse Glimmer on one Arc Pro B70
+
+## New: 278 tok/s aggregate at C8, native 128k context
+
+The new **GPTQ + XPU graphs + DFlash K4** profile delivers **278.1 aggregate e2e tok/s** across eight clients on a matched 256-output-token workload—**5.8×** the original C1/K20 scheduler under the same load. This is **not** 278 tok/s per stream or a completed-answer quality score.
+
+Native **131,072-token prompt-plus-output context** works. We verified eight resident ~64k prompts, staggered queue admission/drain, and six ordinary ~129k requests served correctly through the queue. **Known limit:** a near-capacity, forced-length six-request test produced two empty responses; that failure remains unresolved. This is a research profile, not an unrestricted production-safety claim.
+
+**[New configuration, full numbers, reproduction, and limitations →](docs/concurrency.md)**
+
+## Original C1 completed-answer results
 ![Muse Glimmer 30B decode on one Arc Pro B70: cookbook 26.8, OpenVINO 31.7, vLLM+DFlash writing 42.6 / GSM8K 89.1 / HumanEval 101.1](images/muse-glimmer-b70-decode-vllm.png)
 Public numbers for Meta’s [Muse Glimmer 30B](https://huggingface.co/meta-models/Muse-Glimmer-30B) on a single Intel Arc Pro B70 have lived in the high 20s. The best documented llama.cpp recipe — [SergiioB’s B70 cookbook](https://github.com/SergiioB/intel-arc-pro-b70-inference-cookbook/blob/master/docs/muse-glimmer/MUSE-GLIMMER-B70.md) — is **26.8 tok/s** median decode (28.9 peak) at 128k context with DFlash `n_max=2`. We ran that class of config on the same card and landed in the same place.
 
@@ -85,4 +95,4 @@ python3 scripts/vllm-dflash-share-suite.py 3 2048 share-suite.json
 The process exits non-zero if any prompt is not quoteable. Do not publish a headline from a partial run. Details: [`docs/share-suite.md`](docs/share-suite.md).
 Muse streams `delta.reasoning` then `delta.content`. A client that only reads `content` looks idle until thinking finishes.
 Rebuild from BF16 (optional, **not** bit-identical to the Hub trees; needs CUDA + GPTQModel 7.3.2): `scripts/quantize-muse-glimmer-gptq.py` and `scripts/quantize-muse-dflash-assistant-gptq.py`.
-One stream. Not Spec-Bench, not a 5090, not eight concurrent llama.cpp slots. One B70, the published recipes as a floor, and a vLLM DFlash stack that actually writes the answer.
+This original recipe measures one stream. Not Spec-Bench, not a 5090, not eight concurrent llama.cpp slots. For the separately measured C8/K4 profile, use [the concurrency recipe](docs/concurrency.md).
