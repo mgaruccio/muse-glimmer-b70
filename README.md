@@ -1,12 +1,33 @@
 # Muse Glimmer on one Arc Pro B70
 
-## New: 278 tok/s aggregate at C8, native 128k context
+## New: 840.8 aggregate tok/s at C96 in an experimental burst sweep
 
-The new **GPTQ + XPU graphs + DFlash K4** profile delivers **278.1 aggregate e2e tok/s** across eight clients on a matched 256-output-token workload—**5.8×** the original C1/K20 scheduler under the same load. This is **not** 278 tok/s per stream or a completed-answer quality score.
+![Experimental Glimmer B70 C8–C128 concurrency sweep: aggregate throughput and latency](images/muse-glimmer-b70-concurrency-sweep.png)
 
-Native **131,072-token prompt-plus-output context** works. We verified eight resident ~64k prompts, staggered queue admission/drain, and six ordinary ~129k requests served correctly through the queue. **Known limit:** a near-capacity, forced-length six-request test produced two empty responses; that failure remains unresolved. This is a research profile, not an unrestricted production-safety claim.
+The highest observed median was **840.810 aggregate completion tok/s at C96**
+with DFlash K3 and a frozen 32k draft vocabulary shortlist. This is a
+short-prefill, repeated-prompt, 256-token **reasoning-only** burst measurement—
+not per-stream decode, continuous traffic, long-context throughput, or a
+completed-answer score. **C48 (794.194 tok/s) is the workload-specific
+throughput/latency knee**, not a production recommendation.
 
-**[New configuration, full numbers, reproduction, and limitations →](docs/concurrency.md)**
+**[C8–C128 table, graph, artifact, method, and limits →](docs/concurrency-sweep.md)**
+
+## Retained C8/K4 native-context profile
+
+The published **GPTQ + XPU graphs + DFlash K4** profile delivers **278.1
+aggregate e2e tok/s** across eight clients on its matched 256-output-token
+workload—**5.8×** the original C1/K20 scheduler under the same load. It is a
+different draft-head/configuration from the experimental shortlist/K3 sweep.
+
+Native **131,072-token prompt-plus-output context** works. We verified eight
+resident ~64k prompts, staggered queue admission/drain, and six ordinary ~129k
+requests served correctly through the queue. **Known limit:** a near-capacity,
+forced-length six-request test produced two empty responses; that failure remains
+unresolved. This is a research profile, not an unrestricted production-safety
+claim.
+
+**[C8/K4 configuration, full numbers, reproduction, and limitations →](docs/concurrency.md)**
 
 ## Original C1 completed-answer results
 ![Muse Glimmer 30B decode on one Arc Pro B70: cookbook 26.8, OpenVINO 31.7, vLLM+DFlash writing 42.6 / GSM8K 89.1 / HumanEval 101.1](images/muse-glimmer-b70-decode-vllm.png)

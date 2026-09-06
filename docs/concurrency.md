@@ -3,6 +3,10 @@
 Measured 2026-09-05 on one Intel Arc Pro B70. This extends the existing vLLM-XPU
 GPTQ target + GPTQ assistant stack; it is not a llama.cpp or CUDA recipe.
 
+For the later **experimental C8–C128 shortlist/K3 sweep** (peak observed
+840.810 aggregate tok/s at C96), see [the separate report](concurrency-sweep.md).
+It uses a different draft head and is not a replacement for this C8/K4 recipe.
+
 ## Result: 278.1 aggregate tok/s, not per-stream decode
 
 The retained **C8/K4** profile measured **278.104 aggregate e2e tok/s** at eight
