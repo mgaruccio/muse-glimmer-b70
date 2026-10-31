@@ -36,7 +36,7 @@ test -e "$RENDER_NODE"
   -e VLLM_XPU_ENABLE_XPU_GRAPH=1 \
   -e PYTORCH_ALLOC_CONF=expandable_segments:True \
   --entrypoint bash "$IMAGE" -lc \
-  'set -e; pip install -q vllm-xpu-kernels==0.1.13.2; DFLASH_KV_MODE="$DFLASH_KV_MODE" python /patch-vllm-dflash-gptq-context-kv.py /opt/venv/lib/python3.12/site-packages/vllm/model_executor/models/qwen3_dflash.py; exec vllm serve /model --quantization gptq --dtype float16 --max-model-len 8192 --gpu-memory-utilization 0.90 --kv-cache-dtype fp8 --port 8000 --max-num-seqs 1 --max-num-batched-tokens 2048 --no-enable-prefix-caching --served-model-name muse-glimmer-gptq --language-model-only --reasoning-parser muse_glimmer --speculative-config "$(cat /spec.json)"'
+  'set -e; pip install -q vllm-xpu-kernels==0.1.13.2; DFLASH_KV_MODE="$DFLASH_KV_MODE" python /patch-vllm-dflash-gptq-context-kv.py /opt/venv/lib/python3.12/site-packages/vllm/model_executor/models/qwen3_dflash.py; exec vllm serve /model --quantization gptq --dtype float16 --max-model-len 8192 --gpu-memory-utilization 0.90 --kv-cache-dtype fp8 --port 8000 --max-num-seqs 1 --max-num-batched-tokens 2048 --no-enable-prefix-caching --served-model-name muse-glimmer-gptq --language-model-only --reasoning-parser muse_glimmer --enable-auto-tool-choice --tool-call-parser muse_glimmer --generation-config auto --speculative-config "$(cat /spec.json)"'
 
 echo started "$NAME" graph-mode GPTQ draft on "$PORT" "(DFLASH_KV_MODE=$DFLASH_KV_MODE)"
 /usr/bin/docker ps
